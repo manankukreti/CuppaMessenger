@@ -1,0 +1,13 @@
+1) Server response to user indicating result - success or fail
+    type: MSG-RESULT
+    message: success, fail
+2) User or Server sending list in an array
+    type: MSG-ARRAY
+3) User sending another user a message
+    type: MSG-TEXT
+    subject: user_to_user
+4) User sending to a group
+    type: MSG-TEXT
+    subject: user_to_group
+5) user requesting info from server
+    type: MSG-REQ
