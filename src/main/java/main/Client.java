@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 public class Client {
 	public User user;
@@ -42,7 +43,7 @@ public class Client {
 	}
 
 	public void sendToGroup(String[] to, String msg) throws IOException {
-		send(new Message(user.username, "", "MSG-TEXT", "user_to_group", msg));
+		send(new Message(Arrays.toString(to), "", "MSG-TEXT", "user_to_group", msg));
 	}
 
 

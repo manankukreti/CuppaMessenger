@@ -1,18 +1,16 @@
 package main;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 public class PendingMessages {
-    String type;
     String recipient;
-    String remainingRecipients;
-    private final Queue<Message> messages;
+    private final Queue<Message> messages = new LinkedList<>();
 
     PendingMessages(String type, String recipient){
-        this.type = type;
         this.recipient = recipient;
-        this.messages = new LinkedList<Message>();
     }
 
     public void addMessage(Message msg){

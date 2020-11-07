@@ -3,20 +3,21 @@ import java.io.Serializable;
 
 public class User implements Serializable {
     String username;
-    String job_title;
-    String about;
+    String jobTitle;
+    String bio;
+    String bio;
     String status;
 
     public User(){
         username = "guest";
-        job_title = "visitor";
-        about = "The visitor has not been identified. Will be treated as a guest.";
+        jobTitle = "visitor";
+        bio = "The visitor has not been identified. Will be treated as a guest.";
         status = "online";
     }
     public User(String username, String job_title, String about) {
         this.username = username;
-        this.job_title = job_title;
-        this.about = about;
+        this.jobTitle = job_title;
+        this.bio = about;
         this.status = "online";
     }
 

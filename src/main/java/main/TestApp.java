@@ -70,6 +70,9 @@ public class TestApp {
 										}
 									}
 								}
+								else if(input.equals("send group message")){
+									
+								}
 								else if(input.equals("get online users")){
 									try {
 										client.send(new Message(client.user.username, "server", "MSG-REQ", "general info", "online_users"));

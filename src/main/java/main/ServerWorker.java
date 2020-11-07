@@ -91,6 +91,7 @@ public class ServerWorker extends Thread {
 		while((line = input.readUTF()) != null) {
 			msg = (Message) gson.fromJson(line, Message.class);
 
+
 			if(msg.type.equals("MSG-ARRAY") ){
 				String[] credentials = gson.fromJson(msg.message, String[].class);
 				User this_user = server.authenticateCredentials(credentials[0], credentials[1]);
@@ -100,6 +101,7 @@ public class ServerWorker extends Thread {
 					user = this_user;
 					send(new Message("server", user.username, "MSG-RESULT", "login_credentials", "success"));
 					server.addUser(this_user);
+					System.out.println("success login");
 					break;
 				}
 				else{
@@ -120,6 +122,7 @@ public class ServerWorker extends Thread {
 		String line;
 		Gson gson = new Gson();
 		Message msg;
+
 		while((line = input.readUTF()) != null) {
 
 			msg = (Message) gson.fromJson(line, Message.class);
@@ -134,7 +137,7 @@ public class ServerWorker extends Thread {
 				server.sendToClient(msg);
 			}
 			else if(msg.type.equals("user_to_group")){
-
+				server.sendToGroup(msg);
 			}
 			else if(msg.message.equalsIgnoreCase("online_users")){
 

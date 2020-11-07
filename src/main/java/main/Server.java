@@ -98,16 +98,35 @@ public class Server {
 			recipientWorker.send(msg);
 		}
 		else{
-			if(pendingMessages.containsKey(to)){
-				pendingMessages.get(to).addMessage(msg);
+			addToPendingMessages(to, msg);
+
+
+		}
+	}
+
+	protected void sendToGroup(Message msg) throws IOException{
+		List<String> recipients = Arrays.asList(gson.fromJson(msg.to, String[].class));
+
+		for(String recipient: recipients){
+			ServerWorker sv = getServerWorker(recipient);
+			if(sv == null){
+				addToPendingMessages(recipient, msg);
 			}
 			else{
-				PendingMessages messages = new PendingMessages("regular", to);
-				messages.addMessage(msg);
-				messages.displayPending();
-				pendingMessages.put(to, messages);
+				sv.send(msg);
 			}
+		}
+	}
 
+	private void addToPendingMessages(String to, Message msg){
+		if(pendingMessages.containsKey(to)){
+			pendingMessages.get(to).addMessage(msg);
+		}
+		else{
+			PendingMessages messages = new PendingMessages("regular", to);
+			messages.addMessage(msg);
+			messages.displayPending();
+			pendingMessages.put(to, messages);
 		}
 	}
 
