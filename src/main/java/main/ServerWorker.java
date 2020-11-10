@@ -49,7 +49,7 @@ public class ServerWorker extends Thread {
 
 			@Override
 			public void run() {
-				System.out.println("Client " + user.username + " has gone offline.");
+				System.out.println("Client " + user.getUsername() + " has gone offline.");
 				removeThisUser();
 			}
 		}, 10000);
@@ -66,7 +66,7 @@ public class ServerWorker extends Thread {
 	}
 
 	protected String getUsername(){
-		return user.username;
+		return user.getUsername();
 	}
 
 	protected void send(Message msg) throws IOException {
@@ -84,7 +84,7 @@ public class ServerWorker extends Thread {
 		Message msg;
 
 		//send client welcome message
-		send(new Message("server", user.username, "server_to_client", "welcome_message", "success"));
+		send(new Message("server", user.getUsername(), "server_to_client", "welcome_message", "success"));
 
 
 		String line;
@@ -99,13 +99,14 @@ public class ServerWorker extends Thread {
 				if(this_user != null){
 					isAuth = true;
 					user = this_user;
-					send(new Message("server", user.username, "MSG-RESULT", "login_credentials", "success"));
+
+					send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", gson.toJson(this_user)));
 					server.addUser(this_user);
 					System.out.println("success login");
 					break;
 				}
 				else{
-					send(new Message("server", user.username, "MSG-RESULT", "login_credentials", "fail"));
+					send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", "fail"));
 				}
 			}
 			resetHeartbeatTimer();
@@ -117,7 +118,7 @@ public class ServerWorker extends Thread {
 	}
 	
 	private void listenForClientRequests() throws IOException {
-		System.out.println(user.username + " logged in to the server");
+		System.out.println(user.getUsername() + " logged in to the server");
 		DataInputStream input = new DataInputStream(in);
 		String line;
 		Gson gson = new Gson();
@@ -141,7 +142,13 @@ public class ServerWorker extends Thread {
 			}
 			else if(msg.message.equalsIgnoreCase("online_users")){
 
-				Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getOnlineUsers() );
+				Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getOnlineUsers());
+
+				send(info);
+			}
+			else if(msg.message.equalsIgnoreCase("all_users")){
+
+				Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getAllUsers());
 
 				send(info);
 			}

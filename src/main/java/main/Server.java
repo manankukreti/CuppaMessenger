@@ -16,14 +16,15 @@ import java.net.Socket;
 import java.util.*;
 
 public class Server {
+
 	private final ServerSocket socket;
 	private boolean listenForClients;
-	private final List<ServerWorker> clientList = new ArrayList<>();
-	private final List<User> userList = new ArrayList<>();
 	private static MongoCollection<Document> userCollection;
 	private final Gson gson = new Gson();
 	private final HashMap<String, PendingMessages> pendingMessages =  new HashMap<>();
 
+	private final List<ServerWorker> clientList = new ArrayList<>();
+	private final List<User> userList = new ArrayList<>();
 
 
 	public Server() throws IOException {
@@ -73,7 +74,7 @@ public class Server {
 	protected void addUser(User user) throws IOException {
 		if(!userList.contains(user)) {
 			userList.add(user);
-			releasePendingMessages(user.username);
+			releasePendingMessages(user.getUsername());
 		}
 
 	}
@@ -89,6 +90,28 @@ public class Server {
 		return onlineUsers;
 	}
 
+	protected String getAllUsers(){
+		List<User> users = new ArrayList<>();
+		for (Document userDoc : userCollection.find()) {
+			String username = userDoc.get("username", String.class);
+			User userToAdd = new User(username, userDoc.get("fullName", String.class), userDoc.get("jobTitle", String.class), userDoc.get("bio", String.class));
+			userToAdd.setStatus(getUserStatus(username));
+			users.add(userToAdd);
+		}
+
+		return gson.toJson(users);
+	}
+
+	public String getUserStatus(String username){
+
+		for(User user : userList){
+			if(user.getUsername().equals(username))
+				return user.getStatus();
+		}
+
+		return "offline";
+	}
+
 	protected void sendToClient(Message msg) throws IOException {
 		String to = msg.to;
 
@@ -99,13 +122,11 @@ public class Server {
 		}
 		else{
 			addToPendingMessages(to, msg);
-
-
 		}
 	}
 
 	protected void sendToGroup(Message msg) throws IOException{
-		List<String> recipients = Arrays.asList(gson.fromJson(msg.to, String[].class));
+		String[] recipients = gson.fromJson(msg.to, String[].class);
 
 		for(String recipient: recipients){
 			ServerWorker sv = getServerWorker(recipient);
@@ -145,34 +166,35 @@ public class Server {
 		clientList.removeIf(sw -> sw.getWorkerId().equals(workerId));
 	}
 
-	public boolean addNewAccount(String username, String password, String jobTitle){
+	private boolean addNewAccount(String fullName, String username, String password, String jobTitle){
 
 		if(userCollection.find(new Document("username", username)).first() != null)
 			return false;
 
 		Document new_user = new Document("_id", new ObjectId());
-		new_user.append("username", username).append("password", hashPassword(password)).append("jobTitle", jobTitle);
+		new_user.append("username", username).append("fullName", fullName).append("password", hashPassword(password)).append("jobTitle", jobTitle);
 		userCollection.insertOne(new_user);
 
 		return true;
 	}
 
-	protected String hashPassword(String pw){
+	private String hashPassword(String pw){
 		BCryptPasswordEncoder bc = new BCryptPasswordEncoder();
 		return bc.encode(pw);
 	}
 
-	protected User authenticateCredentials(String username, String password) throws IOException {
+	protected User authenticateCredentials(String username, String password){
 		BCryptPasswordEncoder bc = new BCryptPasswordEncoder();
 		Document usernameDocument = userCollection.find(new Document("username", username)).first();
 
 		if(usernameDocument == null)
 			return null;
 
-		String storedpw = (String) usernameDocument.values().toArray()[2];
+		String storedpw = usernameDocument.get("password", String.class);
 
 		if(bc.matches(password, storedpw)){
-			return new User(username, (String) usernameDocument.values().toArray()[3], "");
+			System.out.println("password matched");
+			return new User(username, usernameDocument.get("fullName", String.class), usernameDocument.get("jobTitle", String.class), usernameDocument.get("bio", String.class));
 		}
 
 		return null;
@@ -186,9 +208,9 @@ public class Server {
 
 		Thread serverManager = new Thread(new Runnable() {
 
-			Server server = new Server();
+			final Server server = new Server();
 			boolean isServerRunning = false;
-			Scanner scanner = new Scanner(System.in);
+			final Scanner scanner = new Scanner(System.in);
 			String cmd;
 
 			@Override
@@ -213,6 +235,8 @@ public class Server {
 						}
 					}
 					else if(cmd.equalsIgnoreCase("create account")){
+						System.out.print("Enter full name: ");
+						String fullName = scanner.nextLine();
 						System.out.print("Enter username: ");
 						String username = scanner.next();
 						System.out.print("Enter password: ");
@@ -220,7 +244,7 @@ public class Server {
 						System.out.print("Enter job title: ");
 						String job = scanner.next();
 
-						server.addNewAccount(username, password, job);
+						server.addNewAccount(fullName, username, password, job);
 
 					}
 

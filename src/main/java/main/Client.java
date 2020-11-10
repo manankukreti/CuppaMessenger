@@ -1,7 +1,6 @@
 package main;
 
 import com.google.gson.Gson;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,11 +10,11 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 
 public class Client {
-	public User user;
+	private User user;
 	private final Socket socket;
-	public InputStream in;
-	public OutputStream out;
-	public boolean isAuth;
+	private final InputStream in;
+	private final OutputStream out;
+	private boolean isAuth;
 	
 	public Client() throws IOException {
 		user = new User();
@@ -39,18 +38,45 @@ public class Client {
 	}
 
 	public void sendToUser(String to, String msg) throws IOException {
-		send(new Message(user.username, to, "MSG-TEXT", "user_to_user", msg));
+		send(new Message(user.getUsername(), to, "MSG-TEXT", "user_to_user", msg));
 	}
 
 	public void sendToGroup(String[] to, String msg) throws IOException {
 		send(new Message(Arrays.toString(to), "", "MSG-TEXT", "user_to_group", msg));
 	}
 
+	public void requestAllUsers() throws IOException {
+		send(new Message(user.getUsername(), "server", "MSG-REQ", "general", "all_users"));
+	}
+
+	public void requestOnlineUsers() throws IOException {
+		send(new Message(user.getUsername(), "server", "MSG-REQ", "general", "online_users"));
+	}
 
 	public void pulse() throws IOException {
-		Message heartbeat = new Message(user.username, "server", "client_status", "heartbeat", "alive");
+		Message heartbeat = new Message(user.getUsername(), "server", "client_status", "heartbeat", "alive");
 		send(heartbeat);
 	}
 
+	public InputStream getInputStream(){
+		return in;
+	}
+
+	public void setUser(User user){
+		this.user = user;
+		System.out.println(this.user.toString());
+	}
+
+	public User getUser(){
+		return user;
+	}
+
+	public void setAuth(boolean auth){
+		isAuth = auth;
+	}
+
+	public boolean isAuth(){
+		return isAuth;
+	}
 
 }

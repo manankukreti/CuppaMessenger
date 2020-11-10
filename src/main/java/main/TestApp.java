@@ -12,7 +12,7 @@ import java.util.TimerTask;
 
 public class TestApp {
 
-	public static void main(String args[]) {
+	public static void main(String args[]) throws IOException {
 
 		Gson gson = new Gson();
 		Scanner scanner = new Scanner(System.in);
@@ -45,43 +45,43 @@ public class TestApp {
 				sendThread = new Thread() {
 					public void run() {
 
+						try {
 
-						while(true) {
-							System.out.println(client.isAuth);
-							if(client.isAuth){
-								System.out.print("Home>");
-								String input = scanner.nextLine();
+							while (true) {
+								if (client.isAuth()) {
+									System.out.print("Home>");
+									String input = scanner.nextLine();
 
-								if(input.equals("send message")){
-									System.out.print("Enter friends username: ");
-									String friend = scanner.next();
-									while(true){
-										System.out.print("to " + friend + ">");
-										String msg = scanner.nextLine();
-										if(msg.equals("to home")){
-											break;
-										}
-										else{
-											try {
-												client.sendToUser(friend, msg);
-											} catch (IOException e) {
-												e.printStackTrace();
+									if (input.equals("send message")) {
+										System.out.print("Enter friends username: ");
+										String friend = scanner.next();
+										while (true) {
+											System.out.print("to " + friend + ">");
+											String msg = scanner.nextLine();
+											if (msg.equals("to home")) {
+												break;
+											} else {
+												try {
+													client.sendToUser(friend, msg);
+												} catch (IOException e) {
+													e.printStackTrace();
+												}
 											}
 										}
+									} else if (input.equals("send group message")) {
+
+									} else if (input.equals("get online users")) {
+											client.requestOnlineUsers();
+									} else if (input.equals("get all users")) {
+										client.requestAllUsers();
 									}
-								}
-								else if(input.equals("send group message")){
-									
-								}
-								else if(input.equals("get online users")){
-									try {
-										client.send(new Message(client.user.username, "server", "MSG-REQ", "general info", "online_users"));
-									} catch (IOException e) {
-										e.printStackTrace();
-									}
+
+
 								}
 
 							}
+						}
+						catch(Exception ex){
 
 						}
 					}
@@ -90,7 +90,7 @@ public class TestApp {
 				//THREAD LISTENING TO SERVER
 				listenThread = new Thread() {
 					public void run() {
-						DataInputStream din = new DataInputStream(client.in);
+						DataInputStream din = new DataInputStream(client.getInputStream());
 						String line;
 						Message msg;
 
@@ -101,39 +101,42 @@ public class TestApp {
 								if(msg.subject.equals("welcome_message")){
 									System.out.println("Connected to the chat!");
 									System.out.print("Enter username: ");
-									client.user.username = scanner.next();;
+									client.getUser().setUsername(scanner.next());
 									System.out.print("Enter password: ");
 									String password = scanner.next();
-									String[] credentials = {client.user.username, password};
-									client.send(new Message(client.user.username, "server", "MSG-ARRAY", "login_username", gson.toJson(credentials)));
+									String[] credentials = {client.getUser().getUsername(), password};
+									client.send(new Message(client.getUser().getUsername(), "server", "MSG-ARRAY", "login_username", gson.toJson(credentials)));
 								}
 								else if(msg.subject.equals("login_credentials")){
 
 									if(msg.message.equals("fail")){
 										System.out.println("Incorrect credentials :(");
 										System.out.print("Enter username: ");
-										client.user.username = scanner.next();;
+										client.getUser().setUsername(scanner.next());
 										System.out.print("Enter password: ");
 										String password = scanner.next();
-										String[] credentials = {client.user.username, password};
-										client.send(new Message(client.user.username, "server", "MSG-ARRAY", "login_username", gson.toJson(credentials)));
+										String[] credentials = {client.getUser().getUsername(), password};
+										client.send(new Message(client.getUser().getUsername(), "server", "MSG-ARRAY", "login_username", gson.toJson(credentials)));
 									}
-									else if(msg.message.equals("success")){
+									else{
 										System.out.print("Login successful!");
-										client.isAuth = true;
+										User this_user = gson.fromJson(msg.message, User.class);
+										client.setUser(this_user);
+										client.setAuth(true);
 										sendThread.start();
 									}
 								}
 								else if(msg.subject.equals("user_to_user") && msg.type.equals("MSG-TEXT")){
 									System.out.println(msg.from + ": " + msg.message);
 								}
-								else if(msg.subject.equals("online_users")){
+								else if(msg.subject.equals("online_users") || msg.subject.equals("all_users")){
 									User[] online_users = gson.fromJson(msg.message, User[].class);
 
 									for(User user: online_users){
-										System.out.println(user.username + " ");
+										System.out.println(user.getUsername() + " ");
 									}
 								}
+
 								else{
 									System.out.println(line);
 								}
