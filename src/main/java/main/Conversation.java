@@ -2,6 +2,7 @@ package main;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Conversation implements Serializable {
@@ -12,6 +13,12 @@ public class Conversation implements Serializable {
         participants = new ArrayList<String>();
         messages = new ArrayList<Message>();
     }
+
+    public Conversation(String[] participants){
+        this.participants = Arrays.asList(participants);
+        this.messages = new ArrayList<>();
+    }
+
     public Conversation(ArrayList<String> participants, ArrayList<Message> messages){
         this.participants = participants;
         this.messages = messages;

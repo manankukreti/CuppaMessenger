@@ -139,6 +139,13 @@ public class Server {
 		}
 	}
 
+	protected void broadcastNotify(String from, String subject, String message) throws IOException{
+		for(User user : userList){
+			Message notify = new Message(from, user.getUsername(), "MSG-NOTIFY", subject, message);
+			getServerWorker(user.getUsername()).send(notify);
+		}
+	}
+
 	private void addToPendingMessages(String to, Message msg){
 		if(pendingMessages.containsKey(to)){
 			pendingMessages.get(to).addMessage(msg);
@@ -193,7 +200,6 @@ public class Server {
 		String storedpw = usernameDocument.get("password", String.class);
 
 		if(bc.matches(password, storedpw)){
-			System.out.println("password matched");
 			return new User(username, usernameDocument.get("fullName", String.class), usernameDocument.get("jobTitle", String.class), usernameDocument.get("bio", String.class));
 		}
 

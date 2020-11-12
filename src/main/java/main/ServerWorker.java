@@ -129,29 +129,37 @@ public class ServerWorker extends Thread {
 			msg = (Message) gson.fromJson(line, Message.class);
 			resetHeartbeatTimer();
 
-			//if heartbeat
+			//if heartbeat skip
 			if(msg.subject.equalsIgnoreCase("hearbeat")){
 				continue;
 			}
 
+			//send message to another user
 			if(msg.subject.equals("user_to_user") && !msg.message.equalsIgnoreCase("online_users")){
 				server.sendToClient(msg);
 			}
+			//send message to group
 			else if(msg.type.equals("user_to_group")){
 				server.sendToGroup(msg);
 			}
+			//send user list of online users
 			else if(msg.message.equalsIgnoreCase("online_users")){
 
 				Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getOnlineUsers());
-
 				send(info);
 			}
+			//send user list of all registered users
 			else if(msg.message.equalsIgnoreCase("all_users")){
 
 				Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getAllUsers());
-
 				send(info);
 			}
+			//change users status
+			else if(msg.subject.equalsIgnoreCase("set_status")){
+				user.setStatus(msg.message);
+				server.broadcastNotify(getUsername(), "user_status_change", msg.message);
+			}
+			//disconnect from the server
 			else if(msg.message.equalsIgnoreCase("quit")) {
 				out.write("disconnecting... \n".getBytes());
 				break;

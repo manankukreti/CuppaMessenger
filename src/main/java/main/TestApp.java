@@ -75,6 +75,14 @@ public class TestApp {
 									} else if (input.equals("get all users")) {
 										client.requestAllUsers();
 									}
+									else if(input.equals("set status")){
+										System.out.println("0 - online");
+										System.out.println("1 - busy");
+										System.out.println("2 - away");
+										System.out.print("status> ");
+										int status_code = scanner.nextInt();
+										client.setStatus(status_code);
+									}
 
 
 								}
@@ -133,7 +141,12 @@ public class TestApp {
 									User[] online_users = gson.fromJson(msg.message, User[].class);
 
 									for(User user: online_users){
-										System.out.println(user.getUsername() + " ");
+										System.out.println(user.toString() + " ");
+									}
+								}
+								else if(msg.type.equalsIgnoreCase("MSG-NOTIFY")){
+									if(msg.subject.equalsIgnoreCase("user_status_change")){
+										System.out.println(msg.from + " changed status to " + msg.message);
 									}
 								}
 

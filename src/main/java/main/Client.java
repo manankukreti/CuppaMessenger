@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class Client {
 	private User user;
@@ -45,14 +46,29 @@ public class Client {
 		send(new Message(Arrays.toString(to), "", "MSG-TEXT", "user_to_group", msg));
 	}
 
+	//set user status
+	public void setStatus(int status_id) throws IOException {
+		if(status_id == 1)
+			user.setStatus("Busy");
+		else if(status_id == 2)
+			user.setStatus("Away");
+		else
+			user.setStatus("Online");
+
+		send(new Message(user.getUsername(), "server", "MSG-REQ", "set_status", user.getStatus()));
+	}
+
+	//request all users that are signed up
 	public void requestAllUsers() throws IOException {
 		send(new Message(user.getUsername(), "server", "MSG-REQ", "general", "all_users"));
 	}
 
+	//request all currently online users
 	public void requestOnlineUsers() throws IOException {
 		send(new Message(user.getUsername(), "server", "MSG-REQ", "general", "online_users"));
 	}
 
+	//send heartbeat to server
 	public void pulse() throws IOException {
 		Message heartbeat = new Message(user.getUsername(), "server", "client_status", "heartbeat", "alive");
 		send(heartbeat);

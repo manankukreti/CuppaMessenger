@@ -1,6 +1,6 @@
 1) Server response to user indicating result - success or fail
     type: MSG-RESULT
-    message: success, fail
+    message: success, fail, {User profile in case of login}
 2) User or Server sending list in an array
     type: MSG-ARRAY
 3) User sending another user a message
@@ -11,3 +11,5 @@
     subject: user_to_group
 5) user requesting info from server
     type: MSG-REQ
+6) server notifying client
+    type: MSG-NOTIFY
