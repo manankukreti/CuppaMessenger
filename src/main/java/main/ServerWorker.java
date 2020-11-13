@@ -36,6 +36,7 @@ public class ServerWorker extends Thread {
 		try {
 			countdownHeartbeatTimer();
 			authenticateUser();
+			heartbeat.cancel();
 			System.out.println("Stopping client thread.");
 		}
 		catch(Exception ex) {
@@ -49,18 +50,22 @@ public class ServerWorker extends Thread {
 
 			@Override
 			public void run() {
-				System.out.println("Client " + user.getUsername() + " has gone offline.");
-				removeThisUser();
+				try {
+					removeThisUser();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}, 10000);
 	}
 
 	private void resetHeartbeatTimer(){
+		System.out.println("Heartbeat reset");
 		heartbeat.cancel();
 		countdownHeartbeatTimer();
 	}
 
-	protected void removeThisUser(){
+	protected void removeThisUser() throws IOException {
 		if(isAuth) server.removeUser(user);
 		server.removeClient(workerId);
 	}
@@ -124,47 +129,53 @@ public class ServerWorker extends Thread {
 		Gson gson = new Gson();
 		Message msg;
 
-		while((line = input.readUTF()) != null) {
+		try {
+			while ((line = input.readUTF()) != null) {
 
-			msg = (Message) gson.fromJson(line, Message.class);
-			resetHeartbeatTimer();
+				msg = (Message) gson.fromJson(line, Message.class);
+				resetHeartbeatTimer();
 
-			//if heartbeat skip
-			if(msg.subject.equalsIgnoreCase("hearbeat")){
-				continue;
-			}
+				//if heartbeat skip
+				if (msg.subject.equalsIgnoreCase("hearbeat")) {
+					continue;
+				}
 
-			//send message to another user
-			if(msg.subject.equals("user_to_user") && !msg.message.equalsIgnoreCase("online_users")){
-				server.sendToClient(msg);
-			}
-			//send message to group
-			else if(msg.type.equals("user_to_group")){
-				server.sendToGroup(msg);
-			}
-			//send user list of online users
-			else if(msg.message.equalsIgnoreCase("online_users")){
+				//send message to another user
+				if (msg.subject.equals("user_to_user") && !msg.message.equalsIgnoreCase("online_users")) {
+					server.sendToClient(msg);
+				}
+				//send message to group
+				else if (msg.type.equals("user_to_group")) {
+					server.sendToGroup(msg);
+				}
+				//send user list of online users
+				else if (msg.message.equalsIgnoreCase("online_users")) {
 
-				Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getOnlineUsers());
-				send(info);
-			}
-			//send user list of all registered users
-			else if(msg.message.equalsIgnoreCase("all_users")){
+					Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getOnlineUsers());
+					send(info);
+				}
+				//send user list of all registered users
+				else if (msg.message.equalsIgnoreCase("all_users")) {
 
-				Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getAllUsers());
-				send(info);
-			}
-			//change users status
-			else if(msg.subject.equalsIgnoreCase("set_status")){
-				user.setStatus(msg.message);
-				server.broadcastNotify(getUsername(), "user_status_change", msg.message);
-			}
-			//disconnect from the server
-			else if(msg.message.equalsIgnoreCase("quit")) {
-				out.write("disconnecting... \n".getBytes());
-				break;
-			}
+					Message info = new Message("server", msg.from, "MSG-RESULT", "all_users", server.getAllUsers());
+					send(info);
+				}
+				//change users status
+				else if (msg.subject.equalsIgnoreCase("set_status")) {
+					user.setStatus(msg.message);
+					server.broadcastNotify(getUsername(), "user_status_change", msg.message);
+				}
+				//disconnect from the server
+				else if (msg.message.equalsIgnoreCase("quit")) {
+					out.write("disconnecting... \n".getBytes());
+					break;
+				}
 
+			}
+		}
+		catch(IOException e){
+			removeThisUser();
+			client.close();
 		}
 
 		removeThisUser();

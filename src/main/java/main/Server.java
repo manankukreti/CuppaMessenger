@@ -1,5 +1,6 @@
 package main;
 
+import ch.qos.logback.classic.LoggerContext;
 import com.google.gson.Gson;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
@@ -8,10 +9,13 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+
 
 import java.util.*;
 
@@ -33,7 +37,9 @@ public class Server {
 		MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
 		MongoDatabase database = mongoClient.getDatabase("chatapp");
 		userCollection = database.getCollection("users");
-		System.out.println("Server started on port " + socket.getLocalPort());
+
+		//TURN OFF MONGODB LOGS
+		((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger("org.mongodb.driver").setLevel(Level.ERROR);
 	}
 
 	public Server(int port) throws IOException {
@@ -74,13 +80,15 @@ public class Server {
 	protected void addUser(User user) throws IOException {
 		if(!userList.contains(user)) {
 			userList.add(user);
+			broadcastNotify(user.getUsername(), "user_status_change", "online");
 			releasePendingMessages(user.getUsername());
 		}
 
 	}
 
-	protected void removeUser(User user){
+	protected void removeUser(User user) throws IOException {
 		userList.remove(user);
+		broadcastNotify(user.getUsername(), "user_status_change", "offline");
 	}
 
 	protected String getOnlineUsers(){
@@ -95,6 +103,7 @@ public class Server {
 		for (Document userDoc : userCollection.find()) {
 			String username = userDoc.get("username", String.class);
 			User userToAdd = new User(username, userDoc.get("fullName", String.class), userDoc.get("jobTitle", String.class), userDoc.get("bio", String.class));
+			System.out.println(username + ": " + getUserStatus(username));
 			userToAdd.setStatus(getUserStatus(username));
 			users.add(userToAdd);
 		}
@@ -103,7 +112,6 @@ public class Server {
 	}
 
 	public String getUserStatus(String username){
-
 		for(User user : userList){
 			if(user.getUsername().equals(username))
 				return user.getStatus();
@@ -141,6 +149,7 @@ public class Server {
 
 	protected void broadcastNotify(String from, String subject, String message) throws IOException{
 		for(User user : userList){
+			System.out.println(user.toString());
 			Message notify = new Message(from, user.getUsername(), "MSG-NOTIFY", subject, message);
 			getServerWorker(user.getUsername()).send(notify);
 		}
@@ -170,7 +179,7 @@ public class Server {
 	}
 
 	protected void removeClient(String workerId) {
-		clientList.removeIf(sw -> sw.getWorkerId().equals(workerId));
+		clientList.removeIf(worker -> worker.getWorkerId().equals(workerId));
 	}
 
 	private boolean addNewAccount(String fullName, String username, String password, String jobTitle){
