@@ -97,7 +97,6 @@ public class TestApp {
 										client.setBio(avatar);
 									}
 
-
 								}
 
 							}
@@ -160,6 +159,12 @@ public class TestApp {
 								else if(msg.type.equalsIgnoreCase("MSG-NOTIFY")){
 									if(msg.subject.equalsIgnoreCase("user_status_change")){
 										System.out.println(msg.from + " changed status to " + msg.message);
+									}
+									else if(msg.subject.equalsIgnoreCase("user_bio_change")){
+										System.out.println(msg.from + " changed bio to " + msg.message);
+									}
+									else if(msg.subject.equalsIgnoreCase("user_avatar_change")){
+										System.out.println(msg.from + " changed avatar to " + msg.message);
 									}
 								}
 

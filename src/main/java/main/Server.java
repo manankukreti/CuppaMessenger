@@ -6,6 +6,8 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -142,12 +144,10 @@ public class Server {
 		}
 	}
 
-	//updates user information in database
-//	protected void updateUserInformation(String username, String field, String newValue){
-//		userCollection.find(new Document("username", username));
-//
-//		userCollection.updateOne(new Document("username", username));
-//	}
+
+	protected void updateUserInformation(String username, String field, String newValue){
+		userCollection.updateOne(Filters.eq("username", username), Updates.set(field, newValue));
+	}
 
 	protected void broadcastNotify(String from, String subject, String message) throws IOException{
 		for(User user : userList){
