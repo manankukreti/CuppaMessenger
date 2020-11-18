@@ -107,8 +107,8 @@ public class ServerWorker extends Thread {
 					user = this_user;
 
 					send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", gson.toJson(this_user)));
-					send(new Message("server", msg.from, "MSG-RESULT", "all_users", server.getAllUsers()));
 					server.addUser(this_user);
+					send(new Message("server", msg.from, "MSG-RESULT", "all_users", server.getAllUsers()));
 					server.releasePendingMessages(user.getUsername());
 					break;
 				}
