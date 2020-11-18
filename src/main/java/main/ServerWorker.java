@@ -17,6 +17,7 @@ public class ServerWorker extends Thread {
 	private final InputStream in;
 	private final OutputStream out;
 	private boolean isAuth;
+	Gson gson = new Gson();
 	
 	protected ServerWorker(String workerId, Server server, Socket client) throws IOException {
 		this.workerId = workerId;
@@ -60,7 +61,6 @@ public class ServerWorker extends Thread {
 	}
 
 	private void resetHeartbeatTimer(){
-		System.out.println("Heartbeat reset");
 		heartbeat.cancel();
 		countdownHeartbeatTimer();
 	}
@@ -68,15 +68,16 @@ public class ServerWorker extends Thread {
 	protected void removeThisUser() throws IOException {
 		if(isAuth) server.removeUser(user);
 		server.removeClient(workerId);
+		client.close();
 	}
 
 	protected String getUsername(){
 		return user.getUsername();
 	}
 
+	//send data to the client being handled by this worker
 	protected void send(Message msg) throws IOException {
 		DataOutputStream dout = new DataOutputStream(out);
-		Gson gson = new Gson();
 
 		dout.writeUTF(gson.toJson(msg) + "\n");
 		dout.flush();
@@ -85,7 +86,7 @@ public class ServerWorker extends Thread {
 	private void authenticateUser() throws IOException{
 		DataInputStream input = new DataInputStream(in);
 		DataOutputStream dout = new DataOutputStream(out);
-		Gson gson = new Gson();
+
 		Message msg;
 
 		//send client welcome message
@@ -106,8 +107,9 @@ public class ServerWorker extends Thread {
 					user = this_user;
 
 					send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", gson.toJson(this_user)));
+					send(new Message("server", msg.from, "MSG-RESULT", "all_users", server.getAllUsers()));
 					server.addUser(this_user);
-					System.out.println("success login");
+					server.releasePendingMessages(user.getUsername());
 					break;
 				}
 				else{
@@ -121,12 +123,12 @@ public class ServerWorker extends Thread {
 		if(isAuth)
 			listenForClientRequests();
 	}
-	
+
+	//listen for the requests being made by the client and call methods to handle the request
 	private void listenForClientRequests() throws IOException {
-		System.out.println(user.getUsername() + " logged in to the server");
+
 		DataInputStream input = new DataInputStream(in);
 		String line;
-		Gson gson = new Gson();
 		Message msg;
 
 		try {
@@ -165,6 +167,16 @@ public class ServerWorker extends Thread {
 					user.setStatus(msg.message);
 					server.broadcastNotify(getUsername(), "user_status_change", msg.message);
 				}
+				else if(msg.subject.equals("set_bio")){
+					server.updateUserInformation(user.getUsername(), "bio", msg.message);
+					user.setBio(msg.message);
+					server.broadcastNotify(user.getUsername(), "user_bio_change", msg.message);
+				}
+				else if(msg.subject.equals("set_avatar")){
+					server.updateUserInformation(user.getUsername(), "avatar", msg.message);
+					user.setBio(msg.message);
+					server.broadcastNotify(user.getUsername(), "user_avatar_change", msg.message);
+				}
 				//disconnect from the server
 				else if (msg.message.equalsIgnoreCase("quit")) {
 					out.write("disconnecting... \n".getBytes());
@@ -175,10 +187,8 @@ public class ServerWorker extends Thread {
 		}
 		catch(IOException e){
 			removeThisUser();
-			client.close();
 		}
 
 		removeThisUser();
-		client.close();
 	}
 }

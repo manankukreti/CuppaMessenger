@@ -21,7 +21,7 @@ public class TestApp {
 		Thread sendThread;
 
 		try {
-			Client client = new Client();	
+			Client client = Client.getInstance();
 			
 			try {
 				
@@ -55,6 +55,7 @@ public class TestApp {
 									if (input.equals("send message")) {
 										System.out.print("Enter friends username: ");
 										String friend = scanner.next();
+										scanner.nextLine();
 										while (true) {
 											System.out.print("to " + friend + ">");
 											String msg = scanner.nextLine();
@@ -81,7 +82,19 @@ public class TestApp {
 										System.out.println("2 - away");
 										System.out.print("status> ");
 										int status_code = scanner.nextInt();
+										scanner.nextLine();
 										client.setStatus(status_code);
+									}
+									else if(input.equals("set bio")){
+										System.out.print("Enter bio: ");
+										String bio = scanner.nextLine();
+										client.setBio(bio);
+									}
+									else if(input.equals("set avatar")){
+										System.out.print("Enter bio: ");
+										String avatar = scanner.next();
+										scanner.nextLine();
+										client.setBio(avatar);
 									}
 
 

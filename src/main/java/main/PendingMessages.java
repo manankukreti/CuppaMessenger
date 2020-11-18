@@ -1,15 +1,13 @@
 package main;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 public class PendingMessages {
     String recipient;
     private final Queue<Message> messages = new LinkedList<>();
 
-    PendingMessages(String type, String recipient){
+    PendingMessages(String recipient){
         this.recipient = recipient;
     }
 
@@ -34,7 +32,4 @@ public class PendingMessages {
         }
     }
 
-    public void removeRecipient(String user){
-
-    }
 }

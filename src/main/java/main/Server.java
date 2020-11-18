@@ -14,8 +14,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-
 
 import java.util.*;
 
@@ -51,7 +49,6 @@ public class Server {
 			if(sw.getUsername().equals(username))
 				return sw;
 		}
-
 		return null;
 	}
 
@@ -81,9 +78,7 @@ public class Server {
 		if(!userList.contains(user)) {
 			userList.add(user);
 			broadcastNotify(user.getUsername(), "user_status_change", "online");
-			releasePendingMessages(user.getUsername());
 		}
-
 	}
 
 	protected void removeUser(User user) throws IOException {
@@ -102,7 +97,7 @@ public class Server {
 		List<User> users = new ArrayList<>();
 		for (Document userDoc : userCollection.find()) {
 			String username = userDoc.get("username", String.class);
-			User userToAdd = new User(username, userDoc.get("fullName", String.class), userDoc.get("jobTitle", String.class), userDoc.get("bio", String.class));
+			User userToAdd = new User(username, userDoc.get("fullName", String.class), userDoc.get("jobTitle", String.class), userDoc.get("bio", String.class), userDoc.get("avatar", String.class));
 			System.out.println(username + ": " + getUserStatus(username));
 			userToAdd.setStatus(getUserStatus(username));
 			users.add(userToAdd);
@@ -147,11 +142,15 @@ public class Server {
 		}
 	}
 
+	//updates user information in database
+	protected void updateUserInformation(String username, String field, String newValue){
+
+	}
+
 	protected void broadcastNotify(String from, String subject, String message) throws IOException{
 		for(User user : userList){
-			System.out.println(user.toString());
 			Message notify = new Message(from, user.getUsername(), "MSG-NOTIFY", subject, message);
-			getServerWorker(user.getUsername()).send(notify);
+			Objects.requireNonNull(getServerWorker(user.getUsername())).send(notify);
 		}
 	}
 
@@ -160,7 +159,7 @@ public class Server {
 			pendingMessages.get(to).addMessage(msg);
 		}
 		else{
-			PendingMessages messages = new PendingMessages("regular", to);
+			PendingMessages messages = new PendingMessages(to);
 			messages.addMessage(msg);
 			messages.displayPending();
 			pendingMessages.put(to, messages);
@@ -182,13 +181,14 @@ public class Server {
 		clientList.removeIf(worker -> worker.getWorkerId().equals(workerId));
 	}
 
-	private boolean addNewAccount(String fullName, String username, String password, String jobTitle){
+	private boolean addNewAccount(String fullName, String username, String password, String jobTitle, String bio, String avatar){
 
+		//return false if the username already exists
 		if(userCollection.find(new Document("username", username)).first() != null)
 			return false;
 
 		Document new_user = new Document("_id", new ObjectId());
-		new_user.append("username", username).append("fullName", fullName).append("password", hashPassword(password)).append("jobTitle", jobTitle);
+		new_user.append("username", username).append("fullName", fullName).append("password", hashPassword(password)).append("jobTitle", jobTitle).append("bio", bio).append("avatar", avatar);
 		userCollection.insertOne(new_user);
 
 		return true;
@@ -209,7 +209,7 @@ public class Server {
 		String storedpw = usernameDocument.get("password", String.class);
 
 		if(bc.matches(password, storedpw)){
-			return new User(username, usernameDocument.get("fullName", String.class), usernameDocument.get("jobTitle", String.class), usernameDocument.get("bio", String.class));
+			return new User(username, usernameDocument.get("fullName", String.class), usernameDocument.get("jobTitle", String.class), usernameDocument.get("bio", String.class), usernameDocument.get("avatar", String.class));
 		}
 
 		return null;
@@ -256,10 +256,16 @@ public class Server {
 						String username = scanner.next();
 						System.out.print("Enter password: ");
 						String password = scanner.next();
+						//consume line character
+						scanner.nextLine();
 						System.out.print("Enter job title: ");
-						String job = scanner.next();
+						String job = scanner.nextLine();
+						System.out.print("Enter bio: ");
+						String bio = scanner.nextLine();
+						System.out.print("Enter avatar: ");
+						String avatar = scanner.next();
 
-						server.addNewAccount(fullName, username, password, job);
+						server.addNewAccount(fullName, username, password, job, bio, avatar);
 
 					}
 
