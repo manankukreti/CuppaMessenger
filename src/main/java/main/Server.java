@@ -143,9 +143,11 @@ public class Server {
 	}
 
 	//updates user information in database
-	protected void updateUserInformation(String username, String field, String newValue){
-
-	}
+//	protected void updateUserInformation(String username, String field, String newValue){
+//		userCollection.find(new Document("username", username));
+//
+//		userCollection.updateOne(new Document("username", username));
+//	}
 
 	protected void broadcastNotify(String from, String subject, String message) throws IOException{
 		for(User user : userList){

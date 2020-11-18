@@ -18,6 +18,14 @@ public class User implements Serializable {
         status = "online";
         avatar = "default";
     }
+    public User(String username, String fullName, String jobTitle, String bio) {
+        this.fullName = fullName;
+        this.username = username;
+        this.jobTitle = jobTitle;
+        this.bio = bio;
+        this.avatar = avatar;
+        this.status = "online";
+    }
     public User(String username, String fullName, String jobTitle, String bio, String avatar) {
         this.fullName = fullName;
         this.username = username;
