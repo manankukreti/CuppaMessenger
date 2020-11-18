@@ -1,11 +1,10 @@
-package main;
-
 import com.google.gson.Gson;
 
-import java.io.BufferedReader;
+import javax.sound.sampled.*;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -70,6 +69,35 @@ public class TestApp {
 											}
 										}
 									} else if (input.equals("send group message")) {
+										System.out.println("Enter usernames.");
+										ArrayList<String> users = new ArrayList<String>();
+										while(true){
+											System.out.print("Add user> ");
+											String user = scanner.next();
+											if(user.equals("done"))
+												break;
+
+											users.add(user);
+										}
+										String[] rec = new String[users.size()];
+										for(int i = 0; i < users.size(); i++){
+											rec[i] = users.get(i);
+										}
+										scanner.nextLine();
+										System.out.println("users added: " + users.toString());
+										System.out.print("Enter group name> ");
+										String grpName = scanner.nextLine();
+										System.out.println("group name set to: " + grpName);
+
+										while(true){
+											System.out.print("to" + grpName + "> ");
+											String message = scanner.nextLine();
+											if(message.equals("done")){
+												break;
+											}
+
+											client.sendToGroup(rec, message, grpName);
+										}
 
 									} else if (input.equals("get online users")) {
 											client.requestOnlineUsers();
@@ -118,6 +146,7 @@ public class TestApp {
 							while((line = din.readUTF()) != null) {
 								msg = gson.fromJson(line, Message.class);
 
+
 								if(msg.subject.equals("welcome_message")){
 									System.out.println("Connected to the chat!");
 									System.out.print("Enter username: ");
@@ -147,14 +176,27 @@ public class TestApp {
 									}
 								}
 								else if(msg.subject.equals("user_to_user") && msg.type.equals("MSG-TEXT")){
-									System.out.println(msg.from + ": " + msg.message);
+										AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(this.getClass().getResource("notification.wav"));
+										Clip clip = AudioSystem.getClip();
+										clip.open(audioInputStream);
+										clip.start();
+										System.out.println(msg.from + ": " + msg.message);
+								}
+								else if(msg.type.equals("MSG-TEXT") && msg.subject.contains("user_to_group")){
+									AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(this.getClass().getResource("notification.wav"));
+									Clip clip = AudioSystem.getClip();
+									clip.open(audioInputStream);
+									clip.start();
+									String grpName = msg.subject.replace("user_to_group:", "");
+
+									System.out.println(grpName+ ": " + msg.message);
 								}
 								else if(msg.subject.equals("online_users") || msg.subject.equals("all_users")){
 									User[] online_users = gson.fromJson(msg.message, User[].class);
 
-									for(User user: online_users){
-										System.out.println(user.toString() + " ");
-									}
+//									for(User user: online_users){
+//										System.out.println(user.toString() + " ");
+//									}
 								}
 								else if(msg.type.equalsIgnoreCase("MSG-NOTIFY")){
 									if(msg.subject.equalsIgnoreCase("user_status_change")){
@@ -173,7 +215,7 @@ public class TestApp {
 								}
 
 							} 
-						} catch (IOException e) {
+						} catch (IOException | LineUnavailableException | UnsupportedAudioFileException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}

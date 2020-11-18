@@ -1,5 +1,3 @@
-package main;
-
 import com.google.gson.Gson;
 
 import java.io.*;
@@ -144,10 +142,10 @@ public class ServerWorker extends Thread {
 
 				//send message to another user
 				if (msg.subject.equals("user_to_user") && !msg.message.equalsIgnoreCase("online_users")) {
-					server.sendToClient(msg);
+					server.sendToClient(msg.to, msg);
 				}
 				//send message to group
-				else if (msg.type.equals("user_to_group")) {
+				else if (msg.type.equals("MSG-TEXT") && msg.subject.contains("user_to_group")) {
 					server.sendToGroup(msg);
 				}
 				//send user list of online users

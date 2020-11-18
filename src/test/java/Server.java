@@ -1,5 +1,3 @@
-package main;
-
 import ch.qos.logback.classic.LoggerContext;
 import com.google.gson.Gson;
 import com.mongodb.MongoClient;
@@ -117,10 +115,10 @@ public class Server {
 		return "offline";
 	}
 
-	protected void sendToClient(Message msg) throws IOException {
+	protected void sendToClient(String username, Message msg) throws IOException {
 		String to = msg.to;
 
-		ServerWorker recipientWorker = getServerWorker(to);
+		ServerWorker recipientWorker = getServerWorker(username);
 
 		if(recipientWorker != null){
 			recipientWorker.send(msg);
@@ -136,6 +134,7 @@ public class Server {
 		for(String recipient: recipients){
 			ServerWorker sv = getServerWorker(recipient);
 			if(sv == null){
+				System.out.println(recipient + " has pending");
 				addToPendingMessages(recipient, msg);
 			}
 			else{
@@ -169,11 +168,13 @@ public class Server {
 	}
 
 	protected void releasePendingMessages(String recipient) throws IOException {
-		if(pendingMessages.containsKey(recipient)) {
-			PendingMessages pm = pendingMessages.get(recipient);
-			while(pm.getSize() != 0){
-				sendToClient(pm.removeMessage());
 
+		if(pendingMessages.containsKey(recipient)) {
+
+			PendingMessages pm = pendingMessages.get(recipient);
+			System.out.println(recipient + " has pending messages " + pm.getSize());
+			while(pm.getSize() != 0){
+				sendToClient(recipient, pm.removeMessage());
 			}
 			pendingMessages.remove(recipient);
 		}
