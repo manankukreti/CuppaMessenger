@@ -1,6 +1,7 @@
 import com.google.gson.Gson;
 
 import javax.sound.sampled.*;
+import java.awt.*;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -185,11 +186,12 @@ public class TestApp {
 									}
 								}
 								else if(msg.subject.equals("user_to_user") && msg.type.equals("MSG-TEXT")){
-										AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(this.getClass().getResource("notification.wav"));
-										Clip clip = AudioSystem.getClip();
-										clip.open(audioInputStream);
-										clip.start();
-										System.out.println(msg.from + ": " + msg.message);
+									AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(this.getClass().getResource("notification.wav"));
+									Clip clip = AudioSystem.getClip();
+									clip.open(audioInputStream);
+									clip.start();
+									displayWindowsNotification(msg.from, msg.message);
+									System.out.println(msg.from + ": " + msg.message);
 								}
 								else if(msg.type.equals("MSG-TEXT") && msg.subject.contains("user_to_group")){
 									AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(this.getClass().getResource("notification.wav"));
@@ -233,7 +235,7 @@ public class TestApp {
 								}
 
 							} 
-						} catch (IOException | LineUnavailableException | UnsupportedAudioFileException e) {
+						} catch (IOException | LineUnavailableException | UnsupportedAudioFileException | AWTException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
@@ -255,5 +257,22 @@ public class TestApp {
 			ex.printStackTrace();
 		}
 		
+	}
+
+	public static void displayWindowsNotification(String title, String body) throws AWTException {
+		SystemTray tray = SystemTray.getSystemTray();
+
+		//If the icon is a file
+		//Alternative (if the icon is on the classpath):
+		Image image = Toolkit.getDefaultToolkit().createImage("3.png");
+
+		TrayIcon trayIcon = new TrayIcon(image, title);
+		//Let the system resize the image if needed
+		trayIcon.setImageAutoSize(true);
+		//Set tooltip text for the tray icon
+		trayIcon.setToolTip(body);
+		tray.add(trayIcon);
+
+		trayIcon.displayMessage(title, body, TrayIcon.MessageType.INFO);
 	}
 }

@@ -190,6 +190,7 @@ public class ServerWorker extends Thread {
 					if(msg.subject.equals("new_post")){
 						Post post = gson.fromJson(msg.message, Post.class);
 						server.addNewPost(post);
+						server.broadcastNotify(user.getUsername(), "user_new_post", msg.message);
 					}
 				}
 				//disconnect from the server
