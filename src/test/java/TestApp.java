@@ -4,10 +4,7 @@ import javax.sound.sampled.*;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class TestApp {
 
@@ -104,6 +101,9 @@ public class TestApp {
 									} else if (input.equals("get all users")) {
 										client.requestAllUsers();
 									}
+									else if (input.equals("get all posts")) {
+										client.requestAllPosts();
+									}
 									else if(input.equals("set status")){
 										System.out.println("0 - online");
 										System.out.println("1 - busy");
@@ -123,6 +123,15 @@ public class TestApp {
 										String avatar = scanner.next();
 										scanner.nextLine();
 										client.setBio(avatar);
+									}
+									else if(input.equals("new post")){
+										System.out.print("Enter Title: ");
+										String title = scanner.next();
+										scanner.nextLine();
+										System.out.print("Enter Body: ");
+										String body = scanner.nextLine();
+										Post post = new Post(title, client.getUser().getUsername(),new Date(), body);
+										client.submitPost(post);
 									}
 
 								}
@@ -191,12 +200,21 @@ public class TestApp {
 
 									System.out.println(grpName+ ": " + msg.message);
 								}
-								else if(msg.subject.equals("online_users") || msg.subject.equals("all_users")){
-									User[] online_users = gson.fromJson(msg.message, User[].class);
+								else if(msg.type.equals("MSG-RESULT")){
+									if(msg.subject.equals("online_users") || msg.subject.equals("all_users")){
+										User[] online_users = gson.fromJson(msg.message, User[].class);
 
-//									for(User user: online_users){
-//										System.out.println(user.toString() + " ");
-//									}
+										for(User user: online_users){
+											System.out.println(user.toString() + " ");
+										}
+									}
+									else if(msg.subject.equals("all_posts")){
+										Post[] posts = gson.fromJson(msg.message, Post[].class);
+										System.out.println("---ALL POSTS---");
+										for(Post post: posts){
+											System.out.println(post.toString() + " ");
+										}
+									}
 								}
 								else if(msg.type.equalsIgnoreCase("MSG-NOTIFY")){
 									if(msg.subject.equalsIgnoreCase("user_status_change")){
@@ -211,7 +229,7 @@ public class TestApp {
 								}
 
 								else{
-									System.out.println(line);
+									System.out.println("Unknown message: " + line);
 								}
 
 							} 

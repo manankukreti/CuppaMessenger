@@ -21,20 +21,26 @@ public class Server {
 
 	private final ServerSocket socket;
 	private boolean listenForClients;
-	private static MongoCollection<Document> userCollection;
 	private final Gson gson = new Gson();
-	private final HashMap<String, PendingMessages> pendingMessages =  new HashMap<>();
 
+	//Server Lists
 	private final List<ServerWorker> clientList = new ArrayList<>();
 	private final List<User> userList = new ArrayList<>();
+	private final HashMap<String, PendingMessages> pendingMessages =  new HashMap<>();
+
+	//Database Collections
+	private static MongoCollection<Document> userCollection;
+	private static MongoCollection<Document> postCollection;
 
 
 	public Server() throws IOException {
 		listenForClients = true;
 		socket = new ServerSocket(5000);
+
 		MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
 		MongoDatabase database = mongoClient.getDatabase("chatapp");
 		userCollection = database.getCollection("users");
+		postCollection = database.getCollection("posts");
 
 		//TURN OFF MONGODB LOGS
 		((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger("org.mongodb.driver").setLevel(Level.ERROR);
@@ -88,7 +94,6 @@ public class Server {
 
 	protected String getOnlineUsers(){
 		String onlineUsers = gson.toJson(userList);
-		System.out.println(onlineUsers);
 
 		return onlineUsers;
 	}
@@ -98,7 +103,7 @@ public class Server {
 		for (Document userDoc : userCollection.find()) {
 			String username = userDoc.get("username", String.class);
 			User userToAdd = new User(username, userDoc.get("fullName", String.class), userDoc.get("jobTitle", String.class), userDoc.get("bio", String.class), userDoc.get("avatar", String.class));
-			System.out.println(username + ": " + getUserStatus(username));
+
 			userToAdd.setStatus(getUserStatus(username));
 			users.add(userToAdd);
 		}
@@ -142,7 +147,6 @@ public class Server {
 			}
 		}
 	}
-
 
 	protected void updateUserInformation(String username, String field, String newValue){
 		userCollection.updateOne(Filters.eq("username", username), Updates.set(field, newValue));
@@ -216,6 +220,23 @@ public class Server {
 		}
 
 		return null;
+	}
+
+	protected void addNewPost(Post post){
+		Document new_post = new Document("_id", new ObjectId());
+		new_post.append("title", post.getTitle()).append("author", post.getAuthor()).append("date", gson.toJson(post.getDate())).append("body", post.getBody());
+		postCollection.insertOne(new_post);
+	}
+
+	protected String getAllPosts(){
+		List<Post> posts = new ArrayList<>();
+		for (Document postDoc : postCollection.find()) {
+			Post postToAdd = new Post(postDoc.get("title", String.class), postDoc.get("author", String.class), gson.fromJson(postDoc.get("date", String.class), Date.class), postDoc.get("body", String.class));
+
+			posts.add(postToAdd);
+		}
+
+		return gson.toJson(posts);
 	}
 
 	public void closeServer() throws IOException {

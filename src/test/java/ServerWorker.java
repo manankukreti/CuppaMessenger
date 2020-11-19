@@ -77,13 +77,18 @@ public class ServerWorker extends Thread {
 	protected void send(Message msg) throws IOException {
 		DataOutputStream dout = new DataOutputStream(out);
 
-		dout.writeUTF(gson.toJson(msg) + "\n");
-		dout.flush();
+		try{
+			dout.writeUTF(gson.toJson(msg) + "\n");
+			dout.flush();
+		}
+		catch(Exception ex){
+			System.out.println(ex.getMessage());
+		}
+
 	}
 
 	private void authenticateUser() throws IOException{
 		DataInputStream input = new DataInputStream(in);
-		DataOutputStream dout = new DataOutputStream(out);
 
 		Message msg;
 
@@ -92,29 +97,33 @@ public class ServerWorker extends Thread {
 
 
 		String line;
-		while((line = input.readUTF()) != null) {
-			msg = (Message) gson.fromJson(line, Message.class);
+		try {
+			while ((line = input.readUTF()) != null) {
+				msg = (Message) gson.fromJson(line, Message.class);
 
 
-			if(msg.type.equals("MSG-ARRAY") ){
-				String[] credentials = gson.fromJson(msg.message, String[].class);
-				User this_user = server.authenticateCredentials(credentials[0], credentials[1]);
+				if (msg.type.equals("MSG-ARRAY")) {
+					String[] credentials = gson.fromJson(msg.message, String[].class);
+					User this_user = server.authenticateCredentials(credentials[0], credentials[1]);
 
-				if(this_user != null){
-					isAuth = true;
-					user = this_user;
+					if (this_user != null) {
+						isAuth = true;
+						user = this_user;
 
-					send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", gson.toJson(this_user)));
-					server.addUser(this_user);
-					send(new Message("server", msg.from, "MSG-RESULT", "all_users", server.getAllUsers()));
-					server.releasePendingMessages(user.getUsername());
-					break;
+						send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", gson.toJson(this_user)));
+						server.addUser(this_user);
+						send(new Message("server", user.getUsername(), "MSG-RESULT", "all_users", server.getAllUsers()));
+						send(new Message("server", user.getUsername(), "MSG-RESULT", "all_posts", server.getAllPosts()));
+						server.releasePendingMessages(user.getUsername());
+						break;
+					} else {
+						send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", "fail"));
+					}
 				}
-				else{
-					send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", "fail"));
-				}
+				resetHeartbeatTimer();
 			}
-			resetHeartbeatTimer();
+		}catch(IOException e){
+			removeThisUser();
 		}
 
 		
@@ -165,15 +174,23 @@ public class ServerWorker extends Thread {
 					user.setStatus(msg.message);
 					server.broadcastNotify(getUsername(), "user_status_change", msg.message);
 				}
+				//change users bio
 				else if(msg.subject.equals("set_bio")){
 					server.updateUserInformation(user.getUsername(), "bio", msg.message);
 					user.setBio(msg.message);
 					server.broadcastNotify(user.getUsername(), "user_bio_change", msg.message);
 				}
+				//change users avatar
 				else if(msg.subject.equals("set_avatar")){
 					server.updateUserInformation(user.getUsername(), "avatar", msg.message);
 					user.setBio(msg.message);
 					server.broadcastNotify(user.getUsername(), "user_avatar_change", msg.message);
+				}
+				else if(msg.type.equals("MSG-POST")){
+					if(msg.subject.equals("new_post")){
+						Post post = gson.fromJson(msg.message, Post.class);
+						server.addNewPost(post);
+					}
 				}
 				//disconnect from the server
 				else if (msg.message.equalsIgnoreCase("quit")) {
