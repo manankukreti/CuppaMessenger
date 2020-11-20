@@ -2,11 +2,11 @@ import java.util.Date;
 
 public class Post {
     private String title;
-    private String author;
+    private User author;
     private Date date;
     private String body;
 
-    public Post(String title, String author, Date date, String body) {
+    public Post(String title, User author, Date date, String body) {
         this.title = title;
         this.author = author;
         this.date = date;
@@ -21,11 +21,11 @@ public class Post {
         this.title = title;
     }
 
-    public String getAuthor() {
+    public User getAuthor() {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(User author) {
         this.author = author;
     }
 

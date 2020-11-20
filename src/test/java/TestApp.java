@@ -131,7 +131,7 @@ public class TestApp {
 										scanner.nextLine();
 										System.out.print("Enter Body: ");
 										String body = scanner.nextLine();
-										Post post = new Post(title, client.getUser().getUsername(),new Date(), body);
+										Post post = new Post(title, client.getUser(),new Date(), body);
 										client.submitPost(post);
 									}
 

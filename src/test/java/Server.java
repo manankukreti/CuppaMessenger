@@ -113,6 +113,15 @@ public class Server {
 		return gson.toJson(users);
 	}
 
+	protected User getUser(String username){
+		Document userDoc = userCollection.find(new Document("username", username)).first();
+
+		if(userDoc == null)
+			return null;
+
+		return new User(userDoc.get("username", String.class), userDoc.get("fullName", String.class), userDoc.get("jobTitle", String.class), userDoc.get("bio", String.class), userDoc.get("avatar", String.class));
+	}
+
 	public String getUserStatus(String username){
 		for(User user : userList){
 			if(user.getUsername().equals(username))
@@ -226,14 +235,14 @@ public class Server {
 
 	protected void addNewPost(Post post){
 		Document new_post = new Document("_id", new ObjectId());
-		new_post.append("title", post.getTitle()).append("author", post.getAuthor()).append("date", gson.toJson(post.getDate())).append("body", post.getBody());
+		new_post.append("title", post.getTitle()).append("author", post.getAuthor().getUsername()).append("date", gson.toJson(post.getDate())).append("body", post.getBody());
 		postCollection.insertOne(new_post);
 	}
 
 	protected String getAllPosts(){
 		List<Post> posts = new ArrayList<>();
 		for (Document postDoc : postCollection.find()) {
-			Post postToAdd = new Post(postDoc.get("title", String.class), postDoc.get("author", String.class), gson.fromJson(postDoc.get("date", String.class), Date.class), postDoc.get("body", String.class));
+			Post postToAdd = new Post(postDoc.get("title", String.class), getUser(postDoc.get("author", String.class)), gson.fromJson(postDoc.get("date", String.class), Date.class), postDoc.get("body", String.class));
 
 			posts.add(postToAdd);
 		}
