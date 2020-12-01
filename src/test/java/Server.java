@@ -202,6 +202,7 @@ public class Server {
 	private boolean addNewAccount(String fullName, String username, String password, String jobTitle, String bio, String avatar){
 
 		//return false if the username already exists
+
 		if(userCollection.find(new Document("username", username)).first() != null)
 			return false;
 
@@ -209,6 +210,14 @@ public class Server {
 		new_user.append("username", username).append("fullName", fullName).append("password", hashPassword(password)).append("jobTitle", jobTitle).append("bio", bio).append("avatar", avatar);
 		userCollection.insertOne(new_user);
 
+		return true;
+	}
+
+	protected boolean removeAccount(String username){
+		if(userCollection.find(new Document("username", username)).first() == null)
+			return false;
+
+		userCollection.deleteOne(new Document("username", username));
 		return true;
 	}
 
@@ -299,8 +308,15 @@ public class Server {
 						String bio = scanner.nextLine();
 						System.out.print("Enter avatar: ");
 						String avatar = scanner.next();
-
+						scanner.nextLine();
 						server.addNewAccount(fullName, username, password, job, bio, avatar);
+
+					}
+					else if(cmd.equalsIgnoreCase("remove account")){
+						System.out.print("Enter username: ");
+						String username = scanner.next();
+						scanner.nextLine();
+						server.removeAccount(username);
 
 					}
 

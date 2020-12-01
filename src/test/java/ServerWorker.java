@@ -193,6 +193,13 @@ public class ServerWorker extends Thread {
 						server.broadcastNotify(user.getUsername(), "user_new_post", msg.message);
 					}
 				}
+				else if(msg.subject.equals("logout")){
+					server.removeUser(user);
+					user = new User();
+					isAuth = false;
+
+					authenticateUser();
+				}
 				//disconnect from the server
 				else if (msg.message.equalsIgnoreCase("quit")) {
 					out.write("disconnecting... \n".getBytes());
