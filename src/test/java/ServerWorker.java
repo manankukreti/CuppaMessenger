@@ -112,7 +112,7 @@ public class ServerWorker extends Thread {
 
 						send(new Message("server", user.getUsername(), "MSG-RESULT", "login_credentials", gson.toJson(this_user)));
 						server.addUser(this_user);
-						send(new Message("server", user.getUsername(), "MSG-RESULT", "all_users", server.getAllUsers()));
+						send(new Message("server", user.getUsername(), "MSG-RESULT", "all_users", gson.toJson(server.getAllUsers())));
 						send(new Message("server", user.getUsername(), "MSG-RESULT", "all_posts", server.getAllPosts()));
 						server.releasePendingMessages(user.getUsername());
 						break;
@@ -160,13 +160,13 @@ public class ServerWorker extends Thread {
 				//send user list of online users
 				else if (msg.message.equalsIgnoreCase("online_users")) {
 
-					Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", server.getOnlineUsers());
+					Message info = new Message("server", msg.from, "MSG-RESULT", "online_users", gson.toJson(server.getOnlineUsers()));
 					send(info);
 				}
 				//send user list of all registered users
 				else if (msg.message.equalsIgnoreCase("all_users")) {
 
-					Message info = new Message("server", msg.from, "MSG-RESULT", "all_users", server.getAllUsers());
+					Message info = new Message("server", msg.from, "MSG-RESULT", "all_users", gson.toJson(server.getAllUsers()));
 					send(info);
 				}
 				//change users status
@@ -192,6 +192,12 @@ public class ServerWorker extends Thread {
 						server.addNewPost(post);
 						server.broadcastNotify(user.getUsername(), "user_new_post", msg.message);
 					}
+				}
+				else if(msg.subject.equals("change_password")){
+					String[] passwords = gson.fromJson(msg.message, String[].class);
+					boolean result = server.changePassword(user.getUsername(), passwords[0], passwords[1]);
+
+					send(new Message("server", user.getUsername(), "MSG-RESULT", "password_update", gson.toJson(result)));
 				}
 				else if(msg.subject.equals("logout")){
 					server.removeUser(user);

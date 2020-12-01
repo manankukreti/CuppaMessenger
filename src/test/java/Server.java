@@ -94,13 +94,12 @@ public class Server {
 		broadcastNotify(user.getUsername(), "user_status_change", "offline");
 	}
 
-	protected String getOnlineUsers(){
-		String onlineUsers = gson.toJson(userList);
+	protected List<User> getOnlineUsers(){
 
-		return onlineUsers;
+		return userList;
 	}
 
-	protected String getAllUsers(){
+	protected List<User> getAllUsers(){
 		List<User> users = new ArrayList<>();
 		for (Document userDoc : userCollection.find()) {
 			String username = userDoc.get("username", String.class);
@@ -110,7 +109,7 @@ public class Server {
 			users.add(userToAdd);
 		}
 
-		return gson.toJson(users);
+		return users;
 	}
 
 	protected User getUser(String username){
@@ -213,12 +212,33 @@ public class Server {
 		return true;
 	}
 
-	protected boolean removeAccount(String username){
+	public boolean removeAccount(String username){
 		if(userCollection.find(new Document("username", username)).first() == null)
 			return false;
 
 		userCollection.deleteOne(new Document("username", username));
 		return true;
+	}
+
+	public boolean changePassword(String username, String oldPass, String newPass){
+		System.out.println(oldPass +" " + newPass);
+		Document user = userCollection.find(new Document("username", username)).first();
+		if(user == null)
+			return false;
+
+		String hashedPass = user.get("password", String.class);
+		BCryptPasswordEncoder bc = new BCryptPasswordEncoder();
+
+		if(bc.matches(oldPass, hashedPass)){
+			String newHashPass = hashPassword(newPass);
+			updateUserInformation(username, "password", newHashPass);
+			return true;
+		}
+		else{
+			System.out.println("password does not match");
+		}
+
+		return false;
 	}
 
 	private String hashPassword(String pw){

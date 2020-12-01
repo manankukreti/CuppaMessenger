@@ -105,6 +105,15 @@ public class TestApp {
 									else if (input.equals("get all posts")) {
 										client.requestAllPosts();
 									}
+									else if (input.equals("change password")) {
+										System.out.print("Enter old password: ");
+										String old = scanner.next();
+										scanner.nextLine();
+										System.out.print("Enter new password: ");
+										String newPass = scanner.next();
+										scanner.nextLine();
+										client.changePassword(old, newPass);
+									}
 									else if(input.equals("set status")){
 										System.out.println("0 - online");
 										System.out.println("1 - busy");

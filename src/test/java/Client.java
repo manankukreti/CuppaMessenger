@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 public class Client {
 	private static Client instance = null;
-	private User user;
+	private User user = new User();;
 	private final Socket socket;
 	private final InputStream in;
 	private final OutputStream out;
@@ -16,16 +16,17 @@ public class Client {
 	Gson gson = new Gson();
 	
 	public Client() throws IOException {
-		user = new User();
 		socket = new Socket("localhost", 5000);
 		in = socket.getInputStream();
 		out = socket.getOutputStream();
+		instance = this;
 	}
 	
-	public Client(String ip, int port) throws UnknownHostException, IOException {
-		socket = new Socket(ip, port);
+	public Client(String ip) throws IOException {
+		socket = new Socket(ip, 5000);
 		in = socket.getInputStream();
 		out = socket.getOutputStream();
+		instance = this;
 	}
 
 	public static Client getInstance() throws IOException {
@@ -46,6 +47,7 @@ public class Client {
 		send(new Message(user.getUsername(), to, "MSG-TEXT", "user_to_user", msg));
 
 	}
+
 
 	public void sendToGroup(String[] to, String msg, String groupName) throws IOException {
 		System.out.println(Arrays.toString(to));
@@ -78,6 +80,11 @@ public class Client {
 		send(new Message(user.getUsername(), "server", "MSG-POST", "new_post", gson.toJson(post)));
 	}
 
+	public void changePassword(String old, String newPass) throws IOException {
+		String[] passes = {old, newPass};
+		send(new Message(user.getUsername(), "server", "MSG-REQ", "change_password", gson.toJson(passes)));
+	}
+
 	//request all users that are signed up
 	public void requestAllUsers() throws IOException {
 		send(new Message(user.getUsername(), "server", "MSG-REQ", "general", "all_users"));
@@ -97,6 +104,7 @@ public class Client {
 		Message heartbeat = new Message(user.getUsername(), "server", "client_status", "heartbeat", "alive");
 		send(heartbeat);
 	}
+
 
 	public InputStream getInputStream(){
 		return in;
